@@ -16,6 +16,7 @@
 
 #include "common.h"
 #include "verifier.h"
+#include "ui.h"
 
 #include "mincrypt/rsa.h"
 #include "mincrypt/sha.h"
@@ -23,6 +24,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
+
+extern RecoveryUI* ui;
 
 // Look for an RSA signature embedded in the .ZIP file comment given
 // the path to the zip.  Verify it matches one of the given public
@@ -32,7 +35,7 @@
 // or no key matches the signature).
 
 int verify_file(const char* path, const RSAPublicKey *pKeys, unsigned int numKeys) {
-    ui_set_progress(0.0);
+    ui->SetProgress(0.0);
 
     FILE* f = fopen(path, "rb");
     if (f == NULL) {
@@ -69,8 +72,8 @@ int verify_file(const char* path, const RSAPublicKey *pKeys, unsigned int numKey
         return VERIFY_FAILURE;
     }
 
-    int comment_size = footer[4] + (footer[5] << 8);
-    int signature_start = footer[0] + (footer[1] << 8);
+    size_t comment_size = footer[4] + (footer[5] << 8);
+    size_t signature_start = footer[0] + (footer[1] << 8);
     LOGI("comment is %d bytes; signature %d bytes from end\n",
          comment_size, signature_start);
 
@@ -99,7 +102,7 @@ int verify_file(const char* path, const RSAPublicKey *pKeys, unsigned int numKey
     // bytes) and the comment data.
     size_t signed_len = ftell(f) + EOCD_HEADER_SIZE - 2;
 
-    unsigned char* eocd = malloc(eocd_size);
+    unsigned char* eocd = (unsigned char*)malloc(eocd_size);
     if (eocd == NULL) {
         LOGE("malloc for EOCD record failed\n");
         fclose(f);
@@ -120,7 +123,7 @@ int verify_file(const char* path, const RSAPublicKey *pKeys, unsigned int numKey
         return VERIFY_FAILURE;
     }
 
-    int i;
+    size_t i;
     for (i = 4; i < eocd_size-3; ++i) {
         if (eocd[i  ] == 0x50 && eocd[i+1] == 0x4b &&
             eocd[i+2] == 0x05 && eocd[i+3] == 0x06) {
@@ -138,7 +141,7 @@ int verify_file(const char* path, const RSAPublicKey *pKeys, unsigned int numKey
 
     SHA_CTX ctx;
     SHA_init(&ctx);
-    unsigned char* buffer = malloc(BUFFER_SIZE);
+    unsigned char* buffer = (unsigned char*)malloc(BUFFER_SIZE);
     if (buffer == NULL) {
         LOGE("failed to alloc memory for sha1 buffer\n");
         fclose(f);
@@ -149,7 +152,7 @@ int verify_file(const char* path, const RSAPublicKey *pKeys, unsigned int numKey
     size_t so_far = 0;
     fseek(f, 0, SEEK_SET);
     while (so_far < signed_len) {
-        int size = BUFFER_SIZE;
+        size_t size = BUFFER_SIZE;
         if (signed_len - so_far < size) size = signed_len - so_far;
         if (fread(buffer, 1, size, f) != size) {
             LOGE("failed to read data from %s (%s)\n", path, strerror(errno));
@@ -160,7 +163,7 @@ int verify_file(const char* path, const RSAPublicKey *pKeys, unsigned int numKey
         so_far += size;
         double f = so_far / (double)signed_len;
         if (f > frac + 0.02 || size == so_far) {
-            ui_set_progress(f);
+            ui->SetProgress(f);
             frac = f;
         }
     }

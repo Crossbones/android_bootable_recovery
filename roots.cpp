@@ -31,9 +31,11 @@
 static int num_volumes = 0;
 static Volume* device_volumes = NULL;
 
+extern struct selabel_handle *sehandle;
+
 static int parse_options(char* options, Volume* volume) {
     char* option;
-    while (option = strtok(options, ",")) {
+    while ((option = strtok(options, ","))) {
         options = NULL;
 
         if (strncmp(option, "length=", 7) == 0) {
@@ -48,7 +50,7 @@ static int parse_options(char* options, Volume* volume) {
 
 void load_volume_table() {
     int alloc = 2;
-    device_volumes = malloc(alloc * sizeof(Volume));
+    device_volumes = (Volume*)malloc(alloc * sizeof(Volume));
 
     // Insert an entry for /tmp, which is the ramdisk and is always mounted.
     device_volumes[0].mount_point = "/tmp";
@@ -91,7 +93,7 @@ void load_volume_table() {
         if (mount_point && fs_type && device) {
             while (num_volumes >= alloc) {
                 alloc *= 2;
-                device_volumes = realloc(device_volumes, alloc*sizeof(Volume));
+                device_volumes = (Volume*)realloc(device_volumes, alloc*sizeof(Volume));
             }
             device_volumes[num_volumes].mount_point = strdup(mount_point);
             device_volumes[num_volumes].fs_type = strdup(fs_type);
@@ -269,7 +271,7 @@ int format_volume(const char* volume) {
     }
 
     if (strcmp(v->fs_type, "ext4") == 0) {
-        int result = make_ext4fs(v->device, v->length);
+        int result = make_ext4fs(v->device, v->length, volume, sehandle);
         if (result != 0) {
             LOGE("format_volume: make_extf4fs failed on %s\n", v->device);
             return -1;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007 The Android Open Source Project
+ * Copyright (C) 2011 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,13 @@
  * limitations under the License.
  */
 
-#ifndef RECOVERY_INSTALL_H_
-#define RECOVERY_INSTALL_H_
+#ifndef __TRANSPORT_H
+#define __TRANSPORT_H
 
-#include "common.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-enum { INSTALL_SUCCESS, INSTALL_ERROR, INSTALL_CORRUPT };
-// Install the package specified by root_path.  If INSTALL_SUCCESS is
-// returned and *wipe_cache is true on exit, caller should wipe the
-// cache partition.
-int install_package(const char *root_path, int* wipe_cache,
-                    const char* install_file);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif  // RECOVERY_INSTALL_H_
+/* convenience wrappers around read/write that will retry on
+** EINTR and/or short read/write.  Returns 0 on success, -1
+** on error or EOF.
+*/
+int readx(int fd, void *ptr, size_t len);
+int writex(int fd, const void *ptr, size_t len);
+#endif   /* __TRANSPORT_H */
