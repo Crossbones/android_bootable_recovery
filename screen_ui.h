@@ -29,6 +29,7 @@ class ScreenRecoveryUI : public RecoveryUI {
     ScreenRecoveryUI();
 
     void Init();
+    void SetLocale(const char* locale);
 
     // overall recovery state ("background image")
     void SetBackground(Icon icon);
@@ -55,9 +56,11 @@ class ScreenRecoveryUI : public RecoveryUI {
   private:
     Icon currentIcon;
     int installingFrame;
+    bool rtl_locale;
 
     pthread_mutex_t updateMutex;
-    gr_surface backgroundIcon[3];
+    gr_surface backgroundIcon[5];
+    gr_surface backgroundText[5];
     gr_surface *installationOverlay;
     gr_surface *progressBarIndeterminate;
     gr_surface progressBarEmpty;
@@ -92,6 +95,7 @@ class ScreenRecoveryUI : public RecoveryUI {
     int indeterminate_frames;
     int installing_frames;
     int install_overlay_offset_x, install_overlay_offset_y;
+    int overlay_offset_x, overlay_offset_y;
 
     void draw_install_overlay_locked(int frame);
     void draw_background_locked(Icon icon);
@@ -104,7 +108,7 @@ class ScreenRecoveryUI : public RecoveryUI {
     void progress_loop();
 
     void LoadBitmap(const char* filename, gr_surface* surface);
-
+    void LoadLocalizedBitmap(const char* filename, gr_surface* surface);
 };
 
 #endif  // RECOVERY_UI_H
